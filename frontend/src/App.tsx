@@ -5,23 +5,10 @@ import './App.css';
 function App() {
 
   const AUTH = 'f884055f9c494705b782ef621c6b663f';
-
-  /** Defines the type of a Spotify playlist object. */
-  type Playlist = {
-    collaborative: boolean,
-    description: string,
-    external_urls: any,
-    href: string,
-    id: string,
-    images: any,
-    name: string,
-    owner: any,
-    public: boolean | null,
-    snapshot_id: string,
-    tracks: any,
-    type: string,
-    uri: string
-  }
+  const [playlistName, setPlaylistName] = useState("");
+  const [playlistDesc, setPlaylistDesc] = useState("");
+  const [aveAudioFeatures, setAveAudioFeatures] = useState({});
+  const [trackRecs, setTrackRecs] = useState([]);
 
   /** Defines the type of a Spotify artist object. */
   type Artist = {
@@ -52,6 +39,23 @@ function App() {
     popularity: number,
     preview_url: string,
     track_number: number,
+    type: string,
+    uri: string
+  }
+
+  /** Defines the type of a Spotify playlist object. */
+  type Playlist = {
+    collaborative: boolean,
+    description: string,
+    external_urls: any,
+    href: string,
+    id: string,
+    images: any,
+    name: string,
+    owner: any,
+    public: boolean | null,
+    snapshot_id: string,
+    tracks: Track[],
     type: string,
     uri: string
   }
@@ -90,8 +94,8 @@ function App() {
    * 
    * Returns a max of 50 playlists as an array of Playlist objects.
   */
-  const getPlaylistsById = async (userId: string) => {
-    await fetch(`https://api.spotify.com/v1/users/${userId}/playlists?limit=50`,
+  const getPlaylistsById = async (userId: string): Promise<Playlist[]> => {
+    return await fetch(`https://api.spotify.com/v1/users/${userId}/playlists?limit=50`,
       {
         method: 'GET',
         headers: {
@@ -102,7 +106,8 @@ function App() {
     )
       .then(res => res.json())
       .then(json => json.items)
-      .catch(error => console.log(`Error getting playlists by user id (${userId}): ${error}`))
+      .then(items => { return items })
+      .catch(error => console.log(`Error getting playlists by user id (${userId}): ${error}`));
   }
 
   /** Get playlist id by playlist name.
@@ -125,8 +130,8 @@ function App() {
    * 
    * Returns a max of 100 tracks as an array of Track objects. 
   */
-  const getTracksByPlaylistId = async (id: string) => {
-    await fetch(`https://api.spotify.com/v1/playlists/${id}/tracks`,
+  const getTracksByPlaylistId = async (id: string): Promise<Track[]> => {
+    return await fetch(`https://api.spotify.com/v1/playlists/${id}/tracks`,
       {
         method: 'GET',
         headers: {
@@ -140,7 +145,11 @@ function App() {
       .then((playlistTracks: PlaylistTrack[]) => playlistTracks.map(
         (playlistTrack: PlaylistTrack) => playlistTrack.track)
       )
-      .catch(error => console.log(`Error getting tracks by playlist id (${id}): ${error}`))
+      .then(tracks => { return tracks })
+      .catch(error => {
+        console.log(`Error getting tracks by playlist id (${id}): ${error}`);
+        return error;
+      })
 
   }
 
@@ -148,8 +157,8 @@ function App() {
    * 
    * Returns information as an AudioFeature object.
    */
-  const getAudioFeaturesByTrackId = async (id: string) => {
-    await fetch(`https://api.spotify.com/v1/audio-features/${id}`,
+  const getAudioFeaturesByTrackId = async (id: string): Promise<AudioFeatures> => {
+    return await fetch(`https://api.spotify.com/v1/audio-features/${id}`,
       {
         method: 'GET',
         headers: {
@@ -169,7 +178,7 @@ function App() {
    * 
    * Returns information as a single JSON object.
    *  */
-  const getMeanAudioFeatures = (objs: []) => {
+  const getMeanAudioFeatures = (objs: any) => {
     const result: { [key: string]: number } = {
       duration: 0,
       key: 0,
@@ -201,7 +210,7 @@ function App() {
   }
 
   /** Randomly selects 5 tracks from an array of Track objects and returns 
-   * an array of their ids.
+   * a string array of their ids.
    * 
    * Requires: [tracks] is an array of size >= 5.
    */
@@ -220,7 +229,7 @@ function App() {
   */
   const getTrackRecs = async (seeds: string[],
     features: { [key: string]: number }) => {
-    await fetch(`https://api.spotify.com/v1/recommendations?
+    return await fetch(`https://api.spotify.com/v1/recommendations?
     seed_tracks=${seeds[0]},${seeds[1]},${seeds[2]},${seeds[3]},${seeds[4]}&
     acousticness=${features.acousticness}&danceability=${features.danceability}&
     duration_ms=${features.duration}&energy=${features.energy}&
@@ -245,7 +254,10 @@ function App() {
         uri: track.uri,
         artist: track.artists[0]
       })))
-      .catch(error => console.log(`Error getting track recommendations: ${error}`))
+      .catch(error => {
+        console.log(`Error getting track recommendations: ${error}`);
+        return error;
+      })
   }
 
   /** Create a new playlist with no tracks for a Spotify user by user id.
@@ -253,7 +265,7 @@ function App() {
    * Returns the id of the new playlist.
    */
   const createPlaylistByUserId = async (id: string, requestBody: any) => {
-    await fetch(`https://api.spotify.com/v1/users/${id}/playlists`,
+    return await fetch(`https://api.spotify.com/v1/users/${id}/playlists`,
       {
         method: 'POST',
         headers: {
@@ -273,7 +285,7 @@ function App() {
    * Returns a snapshot id of the playlist after it has been updated. 
    */
   const addTracksToPlaylist = async (id: string, requestBody: any) => {
-    await fetch(`https://api.spotify.com/v1/playlists/${id}/tracks`,
+    return await fetch(`https://api.spotify.com/v1/playlists/${id}/tracks`,
       {
         method: 'POST',
         headers: {
@@ -285,6 +297,47 @@ function App() {
     )
       .then(res => res.json())
       .catch(error => console.log(`Error adding tracks to playlist by id (${id}): ${error}`))
+  }
+
+  /** Handles form submission. 
+   * 
+   * Creates a new playlist for the user with id [userId]. The new playlist is 
+   * populated with recommendations based on an existing playlist with name 
+   * [playlistName] and description [description]. Updates the page to show a 
+   * few of the recommended tracks.
+  */
+  const handleSubmit = async (userId: string, name: string, description: string) => {
+    setPlaylistName(name);
+    setPlaylistDesc(description);
+
+    // find id of the playlist
+    const currentPlaylists: Playlist[] = await getPlaylistsById(userId);
+    const playlistId: string = getPlaylistIdByName(name, currentPlaylists);
+    const playlistTracks = await getTracksByPlaylistId(playlistId);
+
+    // get audio features
+    const audioFeatures = playlistTracks.map(track => {
+      return getAudioFeaturesByTrackId(track.id)
+    });
+    setAveAudioFeatures(getMeanAudioFeatures(audioFeatures));
+
+    // get seeds and recs
+    const trackSeeds = generateTrackSeeds(playlistTracks);
+    const recs = await getTrackRecs(trackSeeds, aveAudioFeatures);
+    setTrackRecs(recs);
+
+    // create new playlist and populate it
+    const newPlaylistInfo = {
+      name: playlistName,
+      description: description
+    }
+    const newPlaylistId = await createPlaylistByUserId(userId, newPlaylistInfo);
+    const uriArr: string[] = trackRecs.map((rec: { [key: string]: string }) => rec.uri);
+    const newPlaylistTracks = {
+      uris: uriArr
+    }
+    const snapshotId = await addTracksToPlaylist(newPlaylistId, newPlaylistTracks);
+
   }
 
   return (
