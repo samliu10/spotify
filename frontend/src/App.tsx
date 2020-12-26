@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
 import SongForm from './components/SongForm';
+import SongRecs from './components/SongRecs';
 
 function App() {
 
@@ -10,6 +11,21 @@ function App() {
   const [playlistDesc, setPlaylistDesc] = useState("");
   const [aveAudioFeatures, setAveAudioFeatures] = useState({});
   const [trackRecs, setTrackRecs] = useState([]);
+
+  const data = [
+    {
+      trackName: "blue",
+      artistName: "keshi"
+    },
+    {
+      trackName: "lowkey",
+      artistName: "NIKI"
+    },
+    {
+      trackName: "Thank You",
+      artistName: "JUNNY"
+    },
+  ]
 
   /** Defines the type of a Spotify artist object. */
   type Artist = {
@@ -344,6 +360,7 @@ function App() {
   return (
     <div className="App">
       <SongForm />
+      <SongRecs songRecs={data} />
     </div>
   );
 }

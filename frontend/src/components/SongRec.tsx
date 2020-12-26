@@ -1,8 +1,16 @@
-import React, { ReactElement } from 'react'
+import React, { ReactElement } from 'react';
+import ListGroup from 'react-bootstrap/ListGroup';
 
-const SongRec = (): ReactElement => {
+type Props = {
+  readonly trackName: string;
+  readonly artistName: string;
+}
+
+const SongRec = ({ trackName, artistName }: Props): ReactElement => {
   return (
-    <div></div>
+    <div>
+      <ListGroup.Item>{trackName}: {artistName}</ListGroup.Item>
+    </div>
   )
 }
 
