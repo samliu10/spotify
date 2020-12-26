@@ -349,7 +349,7 @@ function App() {
       description: description
     }
     const newPlaylistId = await createPlaylistByUserId(userId, newPlaylistInfo);
-    const uriArr: string[] = trackRecs.map((rec: { [key: string]: string }) => rec.uri);
+    const uriArr: string[] = trackRecs.map((rec: any) => rec.uri);
     const newPlaylistTracks = {
       uris: uriArr
     }
@@ -357,12 +357,30 @@ function App() {
 
   }
 
+
   return (
     <div className="App">
-      <SongForm />
-      <SongRecs songRecs={data} />
+      <h1>Spotify Playlist Generator</h1>
+      <p>Tired of listening to the same songs? Use this playlist generator to
+      get a brand new playlist of songs recommended just for you based on
+      the songs in one of your current playlists. Just type in your Spotify
+      user ID, the name of the playlist you want your recommendations based on,
+      and the name of your new playlist!
+      </p>
+      <SongForm callbackSubmit="" />
+
+      {/* Have recommendations */}
+      {trackRecs.length !== 0 &&
+        <div>
+          <div className="divider"></div>
+          <h3>Your Recommendations</h3>
+          <SongRecs songRecs={data} />
+        </div>}
+
     </div>
   );
+
+
 }
 
 export default App;
