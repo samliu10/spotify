@@ -7,10 +7,12 @@ import SongRecs from './components/SongRecs';
 function App() {
 
   const AUTH = 'f884055f9c494705b782ef621c6b663f';
+  const [userId, setUserId] = useState("");
   const [playlistName, setPlaylistName] = useState("");
-  const [playlistDesc, setPlaylistDesc] = useState("");
+  const [newPlaylistName, setNewPlaylistName] = useState("");
   const [aveAudioFeatures, setAveAudioFeatures] = useState({});
   const [trackRecs, setTrackRecs] = useState([]);
+  const [playlistId, setPlaylistId] = useState("");
 
   const data = [
     {
@@ -117,7 +119,7 @@ function App() {
         method: 'GET',
         headers: {
           'content-type': 'application/json',
-          'Authorization': AUTH
+          'Authorization': "Bearer " + AUTH
         }
       }
     )
@@ -323,17 +325,26 @@ function App() {
    * [playlistName] and description [description]. Updates the page to show a 
    * few of the recommended tracks.
   */
-  const handleSubmit = async (userId: string, name: string, description: string) => {
+  const handleSubmit = async (id: string, name: string, newName: string) => {
+    setUserId(id);
     setPlaylistName(name);
-    setPlaylistDesc(description);
+    setNewPlaylistName(newName);
 
     // find id of the playlist
-    const currentPlaylists: Playlist[] = await getPlaylistsById(userId);
+    const currentPlaylists: Playlist[] = await getPlaylistsById(id);
     const playlistId: string = getPlaylistIdByName(name, currentPlaylists);
+    setPlaylistId(playlistId);
     const playlistTracks = await getTracksByPlaylistId(playlistId);
 
     // get audio features
     const audioFeatures = playlistTracks.map(track => {
+      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
+      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
+      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
+      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
+      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
+      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
+      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
       return getAudioFeaturesByTrackId(track.id)
     });
     setAveAudioFeatures(getMeanAudioFeatures(audioFeatures));
@@ -345,10 +356,10 @@ function App() {
 
     // create new playlist and populate it
     const newPlaylistInfo = {
-      name: playlistName,
-      description: description
+      name: newName,
+      description: "Created just for you!"
     }
-    const newPlaylistId = await createPlaylistByUserId(userId, newPlaylistInfo);
+    const newPlaylistId = await createPlaylistByUserId(id, newPlaylistInfo);
     const uriArr: string[] = trackRecs.map((rec: any) => rec.uri);
     const newPlaylistTracks = {
       uris: uriArr
@@ -367,14 +378,18 @@ function App() {
       user ID, the name of the playlist you want your recommendations based on,
       and the name of your new playlist!
       </p>
-      <SongForm callbackSubmit="" />
+      <SongForm callbackSubmit={handleSubmit} setUserId={setUserId}
+        setPlaylistName={setPlaylistName} setNewPlaylistName={setNewPlaylistName}
+        userId={userId} playlistName={playlistName}
+        newPlaylistName={newPlaylistName} />
+      {"userID = " + userId}{"playlist name = " + playlistName}{"playlist id = " + playlistId}
 
       {/* Have recommendations */}
       {trackRecs.length !== 0 &&
         <div>
           <div className="divider"></div>
           <h3>Your Recommendations</h3>
-          <SongRecs songRecs={data} />
+          <SongRecs songRecs={trackRecs} />
         </div>}
 
     </div>

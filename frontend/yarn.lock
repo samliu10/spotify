@@ -9194,6 +9194,13 @@ react-scripts@4.0.1:
   optionalDependencies:
     fsevents "^2.1.3"
 
+react-spotify-auth@^1.1.4:
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/react-spotify-auth/-/react-spotify-auth-1.1.4.tgz#4448e0f6565c260d8f7fc557a4735d682af884d0"
+  integrity sha512-DP2iVRe0qCojPywX2wVwfCqQP4tvlQ2wLPM1TFjRD3PlpLbtJS3+ldI7edMh7FJmtPI/v2yVSmvfSgK5dLStCw==
+  dependencies:
+    prop-types "^15.7.2"
+
 react-transition-group@^4.4.1:
   version "4.4.1"
   resolved "https://registry.yarnpkg.com/react-transition-group/-/react-transition-group-4.4.1.tgz#63868f9325a38ea5ee9535d828327f85773345c9"
