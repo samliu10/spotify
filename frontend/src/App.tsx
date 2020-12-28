@@ -3,10 +3,14 @@ import logo from './logo.svg';
 import './App.css';
 import SongForm from './components/SongForm';
 import SongRecs from './components/SongRecs';
+import { SpotifyAuth, Scopes } from 'react-spotify-auth';
+import { SpotifyApiContext } from 'react-spotify-api';
+import Cookies from 'js-cookie';
 
 function App() {
 
-  const AUTH = 'f884055f9c494705b782ef621c6b663f';
+  const token = Cookies.get('spotifyAuthToken');
+  const AUTH = Cookies.get('spotifyAuthToken');
   const [userId, setUserId] = useState("");
   const [playlistName, setPlaylistName] = useState("");
   const [newPlaylistName, setNewPlaylistName] = useState("");
@@ -109,6 +113,22 @@ function App() {
     type: string
   }
 
+  type SimpleAudioFeatures = {
+    duration: number,
+    key: number,
+    mode: number,
+    timeSig: number,
+    acousticness: number,
+    danceability: number,
+    energy: number,
+    instrumentalness: number,
+    liveness: number,
+    loudness: number,
+    speechiness: number,
+    valence: number,
+    tempo: number
+  }
+
   /** Get playlists by user ID. 
    * 
    * Returns a max of 50 playlists as an array of Playlist objects.
@@ -124,8 +144,8 @@ function App() {
       }
     )
       .then(res => res.json())
-      .then(json => json.items)
-      .then(items => { return items })
+      .then(json => { return json.items })
+      // .then(items => { return items })
       .catch(error => console.log(`Error getting playlists by user id (${userId}): ${error}`));
   }
 
@@ -155,7 +175,7 @@ function App() {
         method: 'GET',
         headers: {
           'content-type': 'application/json',
-          'Authorization': AUTH
+          'Authorization': "Bearer " + AUTH
         }
       }
     )
@@ -182,7 +202,7 @@ function App() {
         method: 'GET',
         headers: {
           'content-type': 'application/json',
-          'Authorization': AUTH
+          'Authorization': "Bearer " + AUTH
         }
       }
     )
@@ -197,8 +217,8 @@ function App() {
    * 
    * Returns information as a single JSON object.
    *  */
-  const getMeanAudioFeatures = (objs: any) => {
-    const result: { [key: string]: number } = {
+  const getMeanAudioFeatures = async (objs: Promise<AudioFeatures>[]) => {
+    const result: SimpleAudioFeatures = {
       duration: 0,
       key: 0,
       mode: 0,
@@ -216,12 +236,21 @@ function App() {
 
     for (let obj of objs) {
       for (let k in result) {
-        result[k] += obj[k];
+        console.log("k = " + k);
+
+        console.log("obj[k] = " + (await obj)[k]);
+        let value = (await obj)[k];
+        if (value === undefined) { value = 0 }
+
+        result[k] += value;
+        console.log("result[k] = " + result[k]);
       }
     }
 
     for (let k in result) {
-      result[k] = result[k] / objs.length;
+      let len = objs.length;
+      console.log("len = " + len);
+      result[k] = result[k] / len;
     }
 
     return result;
@@ -248,31 +277,25 @@ function App() {
   */
   const getTrackRecs = async (seeds: string[],
     features: { [key: string]: number }) => {
-    return await fetch(`https://api.spotify.com/v1/recommendations?
-    seed_tracks=${seeds[0]},${seeds[1]},${seeds[2]},${seeds[3]},${seeds[4]}&
-    acousticness=${features.acousticness}&danceability=${features.danceability}&
-    duration_ms=${features.duration}&energy=${features.energy}&
-    instrumentalness=${features.instrumentalness}&key=${features.key}&
-    liveness=${features.liveness}&loudness=${features.loudness}&
-    mode=${features.mode}&popularity=${features.popularity}&
-    speechiness=${features.speechiness}&tempo=${features.tempo}&
-    time_signature=${features.timeSig}&valence=${features.valence}`,
+    return await fetch(`https://api.spotify.com/v1/recommendations?seed_tracks=${seeds[0]},${seeds[1]},${seeds[2]},${seeds[3]},${seeds[4]}&acousticness=${features.acousticness}&danceability=${features.danceability}&duration_ms=${features.duration}&energy=${features.energy}&instrumentalness=${features.instrumentalness}&key=${features.key}&liveness=${features.liveness}&loudness=${features.loudness}&mode=${features.mode}&speechiness=${features.speechiness}&tempo=${features.tempo}&time_signature=${features.timeSig}&valence=${features.valence}`,
       {
         method: 'GET',
         headers: {
           'content-type': 'application/json',
-          'Authorization': AUTH
+          'Authorization': "Bearer " + AUTH
         }
       }
     )
       .then(res => res.json())
       .then(json => json.tracks)
-      .then((tracks: Track[]) => tracks.map((track: Track) => ({
-        id: track.id,
-        name: track.name,
-        uri: track.uri,
-        artist: track.artists[0]
-      })))
+      .then((tracks: Track[]) => {
+        return tracks.map((track: Track) => ({
+          id: track.id,
+          name: track.name,
+          uri: track.uri,
+          artist: track.artists[0]
+        }))
+      })
       .catch(error => {
         console.log(`Error getting track recommendations: ${error}`);
         return error;
@@ -289,7 +312,7 @@ function App() {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'Authorization': AUTH
+          'Authorization': "Bearer " + AUTH
         },
         body: JSON.stringify(requestBody)
       }
@@ -309,7 +332,7 @@ function App() {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'Authorization': AUTH
+          'Authorization': "Bearer " + AUTH
         },
         body: JSON.stringify(requestBody)
       }
@@ -337,21 +360,20 @@ function App() {
     const playlistTracks = await getTracksByPlaylistId(playlistId);
 
     // get audio features
-    const audioFeatures = playlistTracks.map(track => {
-      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
-      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
-      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
-      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
-      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
-      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
-      console.log("HELLOOFDKHFSFJSDFJSHFSKJFHKDH");
-      return getAudioFeaturesByTrackId(track.id)
+    const audioFeatures = playlistTracks.map(async track => {
+      console.log("track id = " + track.id);
+      return await getAudioFeaturesByTrackId(track.id);
     });
-    setAveAudioFeatures(getMeanAudioFeatures(audioFeatures));
+
+    const features = getMeanAudioFeatures(audioFeatures);
+    console.log("features = "
+      + features);
+    setAveAudioFeatures(features);
 
     // get seeds and recs
     const trackSeeds = generateTrackSeeds(playlistTracks);
-    const recs = await getTrackRecs(trackSeeds, aveAudioFeatures);
+    const recs = await getTrackRecs(trackSeeds, await features);
+    console.log("recs 1 = " + recs[1].name);
     setTrackRecs(recs);
 
     // create new playlist and populate it
@@ -360,7 +382,7 @@ function App() {
       description: "Created just for you!"
     }
     const newPlaylistId = await createPlaylistByUserId(id, newPlaylistInfo);
-    const uriArr: string[] = trackRecs.map((rec: any) => rec.uri);
+    const uriArr: string[] = recs.map((rec: any) => { return rec.uri });
     const newPlaylistTracks = {
       uris: uriArr
     }
@@ -368,30 +390,66 @@ function App() {
 
   }
 
-
   return (
-    <div className="App">
+    // <div className="App">
+    //   <h1>Spotify Playlist Generator</h1>
+    //   <p>Tired of listening to the same songs? Use this playlist generator to
+    //   get a brand new playlist of songs recommended just for you based on
+    //   the songs in one of your current playlists. Just type in your Spotify
+    //   user ID, the name of the playlist you want your recommendations based on,
+    //   and the name of your new playlist!
+    //   </p>
+    //   <SongForm callbackSubmit={handleSubmit} setUserId={setUserId}
+    //     setPlaylistName={setPlaylistName} setNewPlaylistName={setNewPlaylistName}
+    //     userId={userId} playlistName={playlistName}
+    //     newPlaylistName={newPlaylistName} />
+    //   {"userID = " + userId}{"playlist name = " + playlistName}{"playlist id = " + playlistId}
+
+    //   {/* Have recommendations */}
+    //   {trackRecs.length !== 0 &&
+    //     <div>
+    //       <div className="divider"></div>
+    //       <h3>Your Recommendations</h3>
+    //       <SongRecs songRecs={trackRecs} />
+    //     </div>}
+
+    // </div>
+    <div className='App'>
       <h1>Spotify Playlist Generator</h1>
       <p>Tired of listening to the same songs? Use this playlist generator to
       get a brand new playlist of songs recommended just for you based on
       the songs in one of your current playlists. Just type in your Spotify
       user ID, the name of the playlist you want your recommendations based on,
       and the name of your new playlist!
-      </p>
-      <SongForm callbackSubmit={handleSubmit} setUserId={setUserId}
-        setPlaylistName={setPlaylistName} setNewPlaylistName={setNewPlaylistName}
-        userId={userId} playlistName={playlistName}
-        newPlaylistName={newPlaylistName} />
-      {"userID = " + userId}{"playlist name = " + playlistName}{"playlist id = " + playlistId}
+          </p>
+      {token ? (
+        <SpotifyApiContext.Provider value={token}>
+          {/* Your Spotify Code here */}
+          <p>You are authorized with token: {token}</p>
+          <SongForm callbackSubmit={handleSubmit} setUserId={setUserId}
+            setPlaylistName={setPlaylistName} setNewPlaylistName={setNewPlaylistName}
+            userId={userId} playlistName={playlistName}
+            newPlaylistName={newPlaylistName} />
+          {"userID = " + userId}{"playlist name = " + playlistName}{"playlist id = " + playlistId}
 
-      {/* Have recommendations */}
-      {trackRecs.length !== 0 &&
-        <div>
-          <div className="divider"></div>
-          <h3>Your Recommendations</h3>
-          <SongRecs songRecs={trackRecs} />
-        </div>}
-
+          {/* Have recommendations */}
+          {trackRecs.length !== 0 &&
+            <div>
+              <div className="divider"></div>
+              <h3>Your Recommendations</h3>
+              <SongRecs songRecs={trackRecs} />
+            </div>}
+        </SpotifyApiContext.Provider>
+      ) : (
+          // Display the login page
+          <div className="auth">
+            <SpotifyAuth
+              redirectUri='http://localhost:3000/callback'
+              clientID='1a70ba777fec4ffd9633c0c418bdcf39'
+              scopes={[Scopes.userReadPrivate, 'user-read-email', 'playlist-modify-public']} // either style will work
+            />
+          </div>
+        )}
     </div>
   );
 
