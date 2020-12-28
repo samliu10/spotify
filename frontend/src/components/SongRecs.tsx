@@ -4,8 +4,8 @@ import ListGroup from 'react-bootstrap/ListGroup';
 import SongRec from './SongRec';
 
 type songRec = {
-  readonly trackName: string;
-  readonly artistName: string;
+  readonly name: string;
+  readonly artist: any;
 }
 
 type Props = {
@@ -18,7 +18,7 @@ const SongRecs = ({ songRecs }: Props): ReactElement => {
       <Card>
         <Card.Header>Recommended Songs</Card.Header>
         <ListGroup variant="flush">
-          {songRecs.map((rec, index) => (<SongRec key={index} {...rec} />))}
+          {songRecs.map((rec, index) => (<SongRec key={index} trackName={rec.name} artistName={rec.artist.name} />))}
         </ListGroup>
       </Card>
     </div>

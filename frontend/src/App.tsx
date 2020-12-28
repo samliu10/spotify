@@ -15,8 +15,9 @@ function App() {
   const [playlistName, setPlaylistName] = useState("");
   const [newPlaylistName, setNewPlaylistName] = useState("");
   const [aveAudioFeatures, setAveAudioFeatures] = useState({});
-  const [trackRecs, setTrackRecs] = useState([]);
+  const [trackRecs, setTrackRecs] = useState<any[]>([]);
   const [playlistId, setPlaylistId] = useState("");
+  const [isUpdated, setIsUpdated] = useState(false);
 
   const data = [
     {
@@ -133,13 +134,14 @@ function App() {
    * 
    * Returns a max of 50 playlists as an array of Playlist objects.
   */
-  const getPlaylistsById = async (userId: string): Promise<Playlist[]> => {
+  const getPlaylistsById = async (userId: string) => {
     return await fetch(`https://api.spotify.com/v1/users/${userId}/playlists?limit=50`,
       {
         method: 'GET',
         headers: {
           'content-type': 'application/json',
-          'Authorization': "Bearer " + AUTH
+          'Authorization': "Bearer " + AUTH,
+          'Accept': 'application/x-www-form-urlencoded; application/json',
         }
       }
     )
@@ -236,20 +238,18 @@ function App() {
 
     for (let obj of objs) {
       for (let k in result) {
-        console.log("k = " + k);
 
-        console.log("obj[k] = " + (await obj)[k]);
-        let value = (await obj)[k];
-        if (value === undefined) { value = 0 }
+        if (await obj !== undefined) {
+          let value = (await obj)[k];
+          if (value === undefined) { value = 0 }
+          result[k] += value;
+        }
 
-        result[k] += value;
-        console.log("result[k] = " + result[k]);
       }
     }
 
     for (let k in result) {
       let len = objs.length;
-      console.log("len = " + len);
       result[k] = result[k] / len;
     }
 
@@ -354,26 +354,22 @@ function App() {
     setNewPlaylistName(newName);
 
     // find id of the playlist
-    const currentPlaylists: Playlist[] = await getPlaylistsById(id);
+    const currentPlaylists = await getPlaylistsById(id);
     const playlistId: string = getPlaylistIdByName(name, currentPlaylists);
     setPlaylistId(playlistId);
     const playlistTracks = await getTracksByPlaylistId(playlistId);
 
     // get audio features
     const audioFeatures = playlistTracks.map(async track => {
-      console.log("track id = " + track.id);
       return await getAudioFeaturesByTrackId(track.id);
     });
 
     const features = getMeanAudioFeatures(audioFeatures);
-    console.log("features = "
-      + features);
     setAveAudioFeatures(features);
 
     // get seeds and recs
     const trackSeeds = generateTrackSeeds(playlistTracks);
     const recs = await getTrackRecs(trackSeeds, await features);
-    console.log("recs 1 = " + recs[1].name);
     setTrackRecs(recs);
 
     // create new playlist and populate it
@@ -390,30 +386,14 @@ function App() {
 
   }
 
+  useEffect(() => {
+    if (trackRecs.length !== 0 && trackRecs[0] !== undefined && trackRecs[0].name !== "") {
+      setIsUpdated(true);
+    }
+  }, [trackRecs]);
+
   return (
-    // <div className="App">
-    //   <h1>Spotify Playlist Generator</h1>
-    //   <p>Tired of listening to the same songs? Use this playlist generator to
-    //   get a brand new playlist of songs recommended just for you based on
-    //   the songs in one of your current playlists. Just type in your Spotify
-    //   user ID, the name of the playlist you want your recommendations based on,
-    //   and the name of your new playlist!
-    //   </p>
-    //   <SongForm callbackSubmit={handleSubmit} setUserId={setUserId}
-    //     setPlaylistName={setPlaylistName} setNewPlaylistName={setNewPlaylistName}
-    //     userId={userId} playlistName={playlistName}
-    //     newPlaylistName={newPlaylistName} />
-    //   {"userID = " + userId}{"playlist name = " + playlistName}{"playlist id = " + playlistId}
 
-    //   {/* Have recommendations */}
-    //   {trackRecs.length !== 0 &&
-    //     <div>
-    //       <div className="divider"></div>
-    //       <h3>Your Recommendations</h3>
-    //       <SongRecs songRecs={trackRecs} />
-    //     </div>}
-
-    // </div>
     <div className='App'>
       <h1>Spotify Playlist Generator</h1>
       <p>Tired of listening to the same songs? Use this playlist generator to
@@ -425,15 +405,13 @@ function App() {
       {token ? (
         <SpotifyApiContext.Provider value={token}>
           {/* Your Spotify Code here */}
-          <p>You are authorized with token: {token}</p>
+          {/* <p>You are authorized with token: {token}</p> */}
           <SongForm callbackSubmit={handleSubmit} setUserId={setUserId}
             setPlaylistName={setPlaylistName} setNewPlaylistName={setNewPlaylistName}
             userId={userId} playlistName={playlistName}
             newPlaylistName={newPlaylistName} />
-          {"userID = " + userId}{"playlist name = " + playlistName}{"playlist id = " + playlistId}
-
           {/* Have recommendations */}
-          {trackRecs.length !== 0 &&
+          {isUpdated &&
             <div>
               <div className="divider"></div>
               <h3>Your Recommendations</h3>
