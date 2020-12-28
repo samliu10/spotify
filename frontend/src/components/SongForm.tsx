@@ -32,7 +32,7 @@ const SongForm = ({ callbackSubmit, setUserId, setPlaylistName,
       <Form noValidate validated={validated} onSubmit={submit}>
 
         <Form.Group controlId="validationCustom01">
-          <Form.Label>Spotify User ID</Form.Label>
+          <Form.Label className="form-label">Spotify User ID</Form.Label>
           <Form.Control
             required
             type="text"
@@ -45,7 +45,7 @@ const SongForm = ({ callbackSubmit, setUserId, setPlaylistName,
         </Form.Group>
 
         <Form.Group controlId="validationCustom01">
-          <Form.Label>Playlist Name</Form.Label>
+          <Form.Label className="form-label">Playlist Name</Form.Label>
           <Form.Control
             required
             type="text"
@@ -58,7 +58,7 @@ const SongForm = ({ callbackSubmit, setUserId, setPlaylistName,
         </Form.Group>
 
         <Form.Group controlId="validationCustom01">
-          <Form.Label>New Playlist Name</Form.Label>
+          <Form.Label className="form-label">New Playlist Name</Form.Label>
           <Form.Control
             required
             type="text"
@@ -71,7 +71,7 @@ const SongForm = ({ callbackSubmit, setUserId, setPlaylistName,
         </Form.Group>
 
 
-        <Button type="submit" variant="outline-success">Create Playlist!</Button>
+        <Button className="formBtn" type="submit" variant="success">Create Playlist!</Button>
       </Form>
     </div>
   )

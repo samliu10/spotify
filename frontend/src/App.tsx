@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import logo from './logo.svg';
+import logo from './spotify.png';
 import './App.css';
 import SongForm from './components/SongForm';
 import SongRecs from './components/SongRecs';
 import { SpotifyAuth, Scopes } from 'react-spotify-auth';
-import { SpotifyApiContext } from 'react-spotify-api';
+import { SpotifyApiContext, Track } from 'react-spotify-api';
 import Cookies from 'js-cookie';
+
 
 function App() {
 
@@ -18,6 +19,9 @@ function App() {
   const [trackRecs, setTrackRecs] = useState<any[]>([]);
   const [playlistId, setPlaylistId] = useState("");
   const [isUpdated, setIsUpdated] = useState(false);
+  const [hasNameError, setHasNameError] = useState(false);
+  const [nameError, setNameError] = useState("");
+
 
   const data = [
     {
@@ -147,7 +151,6 @@ function App() {
     )
       .then(res => res.json())
       .then(json => { return json.items })
-      // .then(items => { return items })
       .catch(error => console.log(`Error getting playlists by user id (${userId}): ${error}`));
   }
 
@@ -157,10 +160,10 @@ function App() {
    * id of the first one matching [name]. Raises exception if no such playlist 
    * exists.
    */
-  const getPlaylistIdByName = (name: string, playlists: Playlist[]) => {
+  const getPlaylistIdByName = (userId: string, name: string, playlists: Playlist[]) => {
     const playlistArr: Playlist[] = playlists.filter(playlist => playlist.name === name)
     if (playlistArr.length === 0) {
-      throw new Error(`Error getting playlist id by name: the playlist ${name} does not exist.`)
+      throw new Error(`The playlist '${name}' does not exist in '${userId}'s' library.`)
     }
     else {
       return playlistArr[0].id;
@@ -354,35 +357,43 @@ function App() {
     setNewPlaylistName(newName);
 
     // find id of the playlist
-    const currentPlaylists = await getPlaylistsById(id);
-    const playlistId: string = getPlaylistIdByName(name, currentPlaylists);
-    setPlaylistId(playlistId);
-    const playlistTracks = await getTracksByPlaylistId(playlistId);
 
-    // get audio features
-    const audioFeatures = playlistTracks.map(async track => {
-      return await getAudioFeaturesByTrackId(track.id);
-    });
+    try {
+      const currentPlaylists = await getPlaylistsById(id);
+      setHasNameError(false);
+      const playlistId: string = getPlaylistIdByName(id, name, currentPlaylists);
+      setPlaylistId(playlistId);
+      const playlistTracks = await getTracksByPlaylistId(playlistId);
 
-    const features = getMeanAudioFeatures(audioFeatures);
-    setAveAudioFeatures(features);
+      // get audio features
+      const audioFeatures = playlistTracks.map(async track => {
+        return await getAudioFeaturesByTrackId(track.id);
+      });
 
-    // get seeds and recs
-    const trackSeeds = generateTrackSeeds(playlistTracks);
-    const recs = await getTrackRecs(trackSeeds, await features);
-    setTrackRecs(recs);
+      const features = getMeanAudioFeatures(audioFeatures);
+      setAveAudioFeatures(features);
 
-    // create new playlist and populate it
-    const newPlaylistInfo = {
-      name: newName,
-      description: "Created just for you!"
+      // get seeds and recs
+      const trackSeeds = generateTrackSeeds(playlistTracks);
+      const recs = await getTrackRecs(trackSeeds, await features);
+      setTrackRecs(recs);
+
+      // create new playlist and populate it
+      const newPlaylistInfo = {
+        name: newName,
+        description: "Created just for you!"
+      }
+      const newPlaylistId = await createPlaylistByUserId(id, newPlaylistInfo);
+      const uriArr: string[] = recs.map((rec: any) => { return rec.uri });
+      const newPlaylistTracks = {
+        uris: uriArr
+      }
+      const snapshotId = await addTracksToPlaylist(newPlaylistId, newPlaylistTracks);
     }
-    const newPlaylistId = await createPlaylistByUserId(id, newPlaylistInfo);
-    const uriArr: string[] = recs.map((rec: any) => { return rec.uri });
-    const newPlaylistTracks = {
-      uris: uriArr
+    catch (error) {
+      setNameError(error);
+      setHasNameError(true);
     }
-    const snapshotId = await addTracksToPlaylist(newPlaylistId, newPlaylistTracks);
 
   }
 
@@ -394,40 +405,49 @@ function App() {
 
   return (
 
-    <div className='App'>
-      <h1>Spotify Playlist Generator</h1>
-      <p>Tired of listening to the same songs? Use this playlist generator to
-      get a brand new playlist of songs recommended just for you based on
-      the songs in one of your current playlists. Just type in your Spotify
-      user ID, the name of the playlist you want your recommendations based on,
-      and the name of your new playlist!
+    <div className="App">
+      <div className="main">
+        <img className="logo" src={logo} alt="Spotify logo" />
+        <h1 className="title">Spotify Playlist Generator</h1>
+
+        <p>Tired of listening to the same songs? Use this playlist generator to
+        get a brand new playlist of songs recommended just for you based on
+        the songs in one of your current playlists. Just type in your Spotify
+        user ID, the name of the playlist you want your recommendations based on,
+        and the name of your new playlist!
           </p>
-      {token ? (
-        <SpotifyApiContext.Provider value={token}>
-          {/* Your Spotify Code here */}
-          {/* <p>You are authorized with token: {token}</p> */}
-          <SongForm callbackSubmit={handleSubmit} setUserId={setUserId}
-            setPlaylistName={setPlaylistName} setNewPlaylistName={setNewPlaylistName}
-            userId={userId} playlistName={playlistName}
-            newPlaylistName={newPlaylistName} />
-          {/* Have recommendations */}
-          {isUpdated &&
-            <div>
-              <div className="divider"></div>
-              <h3>Your Recommendations</h3>
-              <SongRecs songRecs={trackRecs} />
-            </div>}
-        </SpotifyApiContext.Provider>
-      ) : (
-          // Display the login page
-          <div className="auth">
-            <SpotifyAuth
-              redirectUri='http://localhost:3000/callback'
-              clientID='1a70ba777fec4ffd9633c0c418bdcf39'
-              scopes={[Scopes.userReadPrivate, 'user-read-email', 'playlist-modify-public']} // either style will work
-            />
-          </div>
-        )}
+        {token ? (
+          <SpotifyApiContext.Provider value={token}>
+            {/* Your Spotify Code here */}
+            {/* <p>You are authorized with token: {token}</p> */}
+            <SongForm callbackSubmit={handleSubmit} setUserId={setUserId}
+              setPlaylistName={setPlaylistName} setNewPlaylistName={setNewPlaylistName}
+              userId={userId} playlistName={playlistName}
+              newPlaylistName={newPlaylistName} />
+            {hasNameError &&
+              <div className="error">
+                {`${nameError} Please enter the name of one of your current playlists.`}
+              </div>}
+            {/* Have recommendations */}
+            {isUpdated &&
+              <div>
+                <div className="divider"></div>
+                <h3>Your Recommendations</h3>
+                <SongRecs songRecs={trackRecs} />
+              </div>}
+          </SpotifyApiContext.Provider>
+        ) : (
+            // Display the login page
+            <div className="auth">
+              <SpotifyAuth
+                redirectUri='http://localhost:3000/callback'
+                clientID='1a70ba777fec4ffd9633c0c418bdcf39'
+                title='Login with Spotify'
+                scopes={[Scopes.userReadPrivate, 'user-read-email', 'playlist-modify-public']} // either style will work
+              />
+            </div>
+          )}
+      </div>
     </div>
   );
 

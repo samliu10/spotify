@@ -16,7 +16,7 @@ const SongRecs = ({ songRecs }: Props): ReactElement => {
   return (
     <div>
       <Card>
-        <Card.Header>Recommended Songs</Card.Header>
+        <Card.Header className="rec-title">Recommended Songs</Card.Header>
         <ListGroup variant="flush">
           {songRecs.map((rec, index) => (<SongRec key={index} trackName={rec.name} artistName={rec.artist.name} />))}
         </ListGroup>

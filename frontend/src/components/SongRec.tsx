@@ -9,7 +9,7 @@ type Props = {
 const SongRec = ({ trackName, artistName }: Props): ReactElement => {
   return (
     <div>
-      <ListGroup.Item>{trackName}: {artistName}</ListGroup.Item>
+      <ListGroup.Item className="song-rec">{trackName}: {artistName}</ListGroup.Item>
     </div>
   )
 }
