@@ -24,6 +24,7 @@ in the playlist, e.g. danceability, acousticness, loudness, speechiness,
 energy, etc. 
 - The application also supports form validation and error handling for 
 calls to the Spotify Web API. 
+- Authorization is supported by [React Spotify Auth](https://www.npmjs.com/package/react-spotify-auth).
 
 ## Demo
 ### Login Screen
