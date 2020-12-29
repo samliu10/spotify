@@ -21,6 +21,20 @@ function App() {
   const [isUpdated, setIsUpdated] = useState(false);
   const [hasNameError, setHasNameError] = useState(false);
   const [nameError, setNameError] = useState("");
+  const [hasToken, setHasToken] = useState(false);
+  const [stateToken, setStateToken] = useState(Cookies.get('spotifyAuthToken'));
+
+  useEffect(() => {
+    if (trackRecs.length !== 0) {
+      setIsUpdated(true);
+    }
+  }, [trackRecs]);
+
+  useEffect(() => {
+    if (stateToken !== undefined && stateToken.length !== 0) {
+      setHasToken(true);
+    }
+  }, [stateToken]);
 
 
   const data = [
@@ -175,7 +189,7 @@ function App() {
    * Returns a max of 100 tracks as an array of Track objects. 
   */
   const getTracksByPlaylistId = async (id: string): Promise<Track[]> => {
-    return await fetch(`https://api.spotify.com/v1/playlists/${id}/tracks`,
+    return await fetch(`https://api.spotify.com/v1/playlists/${id}/tracks?limit=50`,
       {
         method: 'GET',
         headers: {
@@ -388,7 +402,7 @@ function App() {
       const newPlaylistTracks = {
         uris: uriArr
       }
-      const snapshotId = await addTracksToPlaylist(newPlaylistId, newPlaylistTracks);
+      await addTracksToPlaylist(newPlaylistId, newPlaylistTracks);
     }
     catch (error) {
       setNameError(error);
@@ -397,11 +411,6 @@ function App() {
 
   }
 
-  useEffect(() => {
-    if (trackRecs.length !== 0 && trackRecs[0] !== undefined && trackRecs[0].name !== "") {
-      setIsUpdated(true);
-    }
-  }, [trackRecs]);
 
   return (
 
@@ -416,7 +425,7 @@ function App() {
         user ID, the name of the playlist you want your recommendations based on,
         and the name of your new playlist!
           </p>
-        {token ? (
+        {hasToken ? (
           <SpotifyApiContext.Provider value={token}>
             {/* Your Spotify Code here */}
             {/* <p>You are authorized with token: {token}</p> */}
