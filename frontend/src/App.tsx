@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import logo from './spotify.png';
+import logo from './assets/spotify.png';
 import './App.css';
 import SongForm from './components/SongForm';
 import SongRecs from './components/SongRecs';
@@ -11,7 +11,6 @@ import Cookies from 'js-cookie';
 function App() {
 
   const token = Cookies.get('spotifyAuthToken');
-  const AUTH = Cookies.get('spotifyAuthToken');
   const [userId, setUserId] = useState("");
   const [playlistName, setPlaylistName] = useState("");
   const [newPlaylistName, setNewPlaylistName] = useState("");
@@ -22,7 +21,6 @@ function App() {
   const [hasNameError, setHasNameError] = useState(false);
   const [nameError, setNameError] = useState("");
   const [hasToken, setHasToken] = useState(false);
-  const [stateToken, setStateToken] = useState(Cookies.get('spotifyAuthToken'));
 
   useEffect(() => {
     if (trackRecs.length !== 0) {
@@ -30,27 +28,9 @@ function App() {
     }
   }, [trackRecs]);
 
-  useEffect(() => {
-    if (stateToken !== undefined && stateToken.length !== 0) {
-      setHasToken(true);
-    }
-  }, [stateToken]);
-
-
-  const data = [
-    {
-      trackName: "blue",
-      artistName: "keshi"
-    },
-    {
-      trackName: "lowkey",
-      artistName: "NIKI"
-    },
-    {
-      trackName: "Thank You",
-      artistName: "JUNNY"
-    },
-  ]
+  const onAuth = () => {
+    setHasToken(true);
+  }
 
   /** Defines the type of a Spotify artist object. */
   type Artist = {
@@ -158,7 +138,7 @@ function App() {
         method: 'GET',
         headers: {
           'content-type': 'application/json',
-          'Authorization': "Bearer " + AUTH,
+          'Authorization': "Bearer " + token,
           'Accept': 'application/x-www-form-urlencoded; application/json',
         }
       }
@@ -194,7 +174,7 @@ function App() {
         method: 'GET',
         headers: {
           'content-type': 'application/json',
-          'Authorization': "Bearer " + AUTH
+          'Authorization': "Bearer " + token
         }
       }
     )
@@ -221,7 +201,7 @@ function App() {
         method: 'GET',
         headers: {
           'content-type': 'application/json',
-          'Authorization': "Bearer " + AUTH
+          'Authorization': "Bearer " + token
         }
       }
     )
@@ -299,7 +279,7 @@ function App() {
         method: 'GET',
         headers: {
           'content-type': 'application/json',
-          'Authorization': "Bearer " + AUTH
+          'Authorization': "Bearer " + token
         }
       }
     )
@@ -329,7 +309,7 @@ function App() {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'Authorization': "Bearer " + AUTH
+          'Authorization': "Bearer " + token
         },
         body: JSON.stringify(requestBody)
       }
@@ -349,7 +329,7 @@ function App() {
         method: 'POST',
         headers: {
           'content-type': 'application/json',
-          'Authorization': "Bearer " + AUTH
+          'Authorization': "Bearer " + token
         },
         body: JSON.stringify(requestBody)
       }
@@ -428,7 +408,6 @@ function App() {
         {hasToken ? (
           <SpotifyApiContext.Provider value={token}>
             {/* Your Spotify Code here */}
-            {/* <p>You are authorized with token: {token}</p> */}
             <SongForm callbackSubmit={handleSubmit} setUserId={setUserId}
               setPlaylistName={setPlaylistName} setNewPlaylistName={setNewPlaylistName}
               userId={userId} playlistName={playlistName}
@@ -452,6 +431,7 @@ function App() {
                 redirectUri='http://localhost:3000/callback'
                 clientID='1a70ba777fec4ffd9633c0c418bdcf39'
                 title='Login with Spotify'
+                onAccessToken={onAuth}
                 scopes={[Scopes.userReadPrivate, 'user-read-email', 'playlist-modify-public']} // either style will work
               />
             </div>
