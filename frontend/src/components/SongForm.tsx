@@ -32,15 +32,15 @@ const SongForm = ({ callbackSubmit, setUserId, setPlaylistName,
       <Form noValidate validated={validated} onSubmit={submit}>
 
         <Form.Group controlId="validationCustom01">
-          <Form.Label className="form-label">Spotify User ID</Form.Label>
+          <Form.Label className="form-label">Spotify Username</Form.Label>
           <Form.Control
             required
             type="text"
-            placeholder="User ID"
+            placeholder="Username"
             onChange={(e) => setUserId(e.target.value)}
           />
           <Form.Control.Feedback type="invalid">
-            Please enter your Spotify user ID.
+            Please enter your Spotify username.
             </Form.Control.Feedback>
         </Form.Group>
 
@@ -71,7 +71,7 @@ const SongForm = ({ callbackSubmit, setUserId, setPlaylistName,
         </Form.Group>
 
 
-        <Button className="formBtn" type="submit" variant="success">Create Playlist!</Button>
+        <Button className="form-button" type="submit" variant="success">Create Playlist!</Button>
       </Form>
     </div>
   )

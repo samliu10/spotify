@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import logo from './assets/spotify.png';
+import tracks from './assets/tracks.png';
 import './App.css';
 import SongForm from './components/SongForm';
 import SongRecs from './components/SongRecs';
 import { SpotifyAuth, Scopes } from 'react-spotify-auth';
 import { SpotifyApiContext, Track } from 'react-spotify-api';
 import Cookies from 'js-cookie';
+import Spinner from 'react-bootstrap/Spinner';
+import Button from 'react-bootstrap/Button';
+import Fade from 'react-bootstrap/Fade';
 
 
 function App() {
@@ -21,15 +25,24 @@ function App() {
   const [hasNameError, setHasNameError] = useState(false);
   const [nameError, setNameError] = useState("");
   const [hasToken, setHasToken] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showForm, setShowForm] = useState(true);
 
   useEffect(() => {
     if (trackRecs.length !== 0) {
       setIsUpdated(true);
+      setShowForm(false);
     }
   }, [trackRecs]);
 
   const onAuth = () => {
     setHasToken(true);
+  }
+
+  const updateLoading = () => {
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 3000)
   }
 
   /** Defines the type of a Spotify artist object. */
@@ -346,6 +359,8 @@ function App() {
    * few of the recommended tracks.
   */
   const handleSubmit = async (id: string, name: string, newName: string) => {
+    setIsLoading(true);
+    updateLoading();
     setUserId(id);
     setPlaylistName(name);
     setNewPlaylistName(newName);
@@ -387,6 +402,7 @@ function App() {
     catch (error) {
       setNameError(error);
       setHasNameError(true);
+      setIsLoading(false);
     }
 
   }
@@ -402,40 +418,78 @@ function App() {
         <p>Tired of listening to the same songs? Use this playlist generator to
         get a brand new playlist of songs recommended just for you based on
         the songs in one of your current playlists. Just type in your Spotify
-        user ID, the name of the playlist you want your recommendations based on,
-        and the name of your new playlist!
+        username, the name of the playlist* you want your recommendations based on,
+        and the name of your new playlist. Then check your Spotify library
+        to start listening!
           </p>
-        {hasToken ? (
-          <SpotifyApiContext.Provider value={token}>
-            {/* Your Spotify Code here */}
-            <SongForm callbackSubmit={handleSubmit} setUserId={setUserId}
-              setPlaylistName={setPlaylistName} setNewPlaylistName={setNewPlaylistName}
-              userId={userId} playlistName={playlistName}
-              newPlaylistName={newPlaylistName} />
-            {hasNameError &&
-              <div className="error">
-                {`${nameError} Please enter the name of one of your current playlists.`}
-              </div>}
-            {/* Have recommendations */}
-            {isUpdated &&
-              <div>
-                <div className="divider"></div>
-                <h3>Your Recommendations</h3>
-                <SongRecs songRecs={trackRecs} />
-              </div>}
-          </SpotifyApiContext.Provider>
+        <p>* The playlist must have at least 5 tracks.</p>
+
+        {/* Display loading screen */}
+        {isLoading ? (
+          <div>
+            <div className="divider"></div>
+            <Spinner animation="border" className="spinner" />
+            <h3>Generating an amazing playlist for you!</h3>
+          </div>
+
         ) : (
-            // Display the login page
-            <div className="auth">
-              <SpotifyAuth
-                redirectUri='http://localhost:3000/callback'
-                clientID='1a70ba777fec4ffd9633c0c418bdcf39'
-                title='Login with Spotify'
-                onAccessToken={onAuth}
-                scopes={[Scopes.userReadPrivate, 'user-read-email', 'playlist-modify-public']} // either style will work
-              />
+            <div>
+              {hasToken ? (
+
+                <SpotifyApiContext.Provider value={token}>
+
+                  {showForm ? (
+                    <div>
+                      <SongForm callbackSubmit={handleSubmit} setUserId={setUserId}
+                        setPlaylistName={setPlaylistName} setNewPlaylistName={setNewPlaylistName}
+                        userId={userId} playlistName={playlistName}
+                        newPlaylistName={newPlaylistName} />
+
+                      {/* Some error */}
+                      {hasNameError &&
+                        <div className="error">
+                          {`${nameError} Please enter the name of one of your current playlists.`}
+                        </div>}
+
+                    </div>
+
+                  ) : (
+                      <div>
+                        {/* Have recommendations */}
+                        {isUpdated &&
+                          <Fade in={isUpdated}>
+                            <div>
+                              <div className="divider"></div>
+                              <h3>Your Recommendations</h3>
+                              <SongRecs songRecs={trackRecs} />
+                              <Button className="playlist-button" variant="success"
+                                onClick={() => setShowForm(true)}>
+                                Create Another Playlist!
+                              </Button>
+                            </div>
+                          </Fade>}
+                      </div>
+
+
+                    )}
+
+                </SpotifyApiContext.Provider>
+              ) : (
+                  // Display the login page
+                  <div className="auth">
+                    <SpotifyAuth
+                      redirectUri='http://localhost:3000/callback'
+                      clientID='1a70ba777fec4ffd9633c0c418bdcf39'
+                      title='Login with Spotify'
+                      onAccessToken={onAuth}
+                      scopes={[Scopes.userReadPrivate, 'user-read-email', 'playlist-modify-public']} // either style will work
+                    />
+                  </div>
+                )}
             </div>
           )}
+
+
       </div>
     </div>
   );
